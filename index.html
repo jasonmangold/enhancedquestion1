@@ -131,7 +131,7 @@
             margin-right: 8px;
         }
 
-        input {
+        input, select {
             width: 100%;
             padding: 12px;
             border: 2px solid #e0e0e0;
@@ -140,7 +140,7 @@
             transition: border-color 0.3s ease;
         }
 
-        input:focus {
+        input:focus, select:focus {
             outline: none;
             border-color: var(--secondary);
         }
@@ -255,11 +255,16 @@
             margin: 8px 0;
             padding-left: 15px;
             position: relative;
-            cursor: pointer;
             transition: color 0.3s ease;
         }
 
-        .report-list p:hover {
+        .report-list a {
+            text-decoration: none;
+            color: var(--text);
+            cursor: pointer;
+        }
+
+        .report-list a:hover {
             color: var(--secondary);
         }
 
@@ -536,11 +541,12 @@
 
                 <div class="learn-more">
                     <h3>Learn More:</h3>
-                    <div class="report-list">
-                        <p>"Understanding Interest Rates"</p>
-                        <p>"Investment Basics"</p>
-                        <p>"Debt Reduction Strategies"</p>
-                    </div>
+                    <select id="reportCategory" onchange="populateLearnMore()">
+                        <option value="all">All Topics</option>
+                        <option value="debt">Debt</option>
+                        <option value="investment">Investment</option>
+                    </select>
+                    <div class="report-list" id="learnMoreList"></div>
                 </div>
 
                 <div class="related-topics">
@@ -572,6 +578,18 @@
         </div>
     </div>
 
+    <div id="reportEmailModal" class="modal">
+        <div class="modal-content">
+            <h3>Enter Your Email for Report</h3>
+            <input type="email" id="reportEmailInput" placeholder="your@email.com">
+            <p>Get instant access to your selected report.</p>
+            <div class="modal-buttons">
+                <button class="modal-button submit-email" onclick="submitReportEmail()">Submit</button>
+                <button class="modal-button cancel-email" onclick="closeReportModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <footer>
         <p>Your financial goals are within reach. Let’s talk.</p>
         <button class="cta-button" onclick="location.href='#consultation'">Schedule a Consultation</button>
@@ -594,6 +612,133 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
     <script>
+        // Report titles categorized
+        const allReports = [
+            "Accumulation Goals",
+            "Purchasing Power of One Dollar",
+            "Checking Your Credit Report",
+            "Credit Cards",
+            "Debt Repayment Strategies",
+            "Managing Your Debt",
+            "Repaying Student Debt",
+            "Time and Growth of Money",
+            "Up to Your Neck in Debt?",
+            "Asset Allocation",
+            "Basic Investment Tools",
+            "Coping With Market Volatility",
+            "Federal Taxation of Common Investments",
+            "Key Investment Questions",
+            "Pay Off the Mortgage or Invest?",
+            "Stock Market Indexes and Averages",
+            "The Perfect Investment",
+            "The Rule of 72 and the Rule of 115",
+            "Types of Investment Risk",
+            "Dollar Cost Averaging"
+        ];
+
+        const debtReports = [
+            "Checking Your Credit Report",
+            "Credit Cards",
+            "Debt Repayment Strategies",
+            "Managing Your Debt",
+            "Repaying Student Debt",
+            "Up to Your Neck in Debt?"
+        ];
+
+        const investmentReports = [
+            "Asset Allocation",
+            "Basic Investment Tools",
+            "Coping With Market Volatility",
+            "Federal Taxation of Common Investments",
+            "Key Investment Questions",
+            "Pay Off the Mortgage or Invest?",
+            "Stock Market Indexes and Averages",
+            "The Perfect Investment",
+            "Dollar Cost Averaging"
+        ];
+
+        // Function to shuffle array and return 3 random items
+        function getRandomReports(arr, num) {
+            const shuffled = [...arr].sort(() => 0.5 - Math.random());
+            return shuffled.slice(0, num);
+        }
+
+        // Function to generate PDF link from report title (no spaces)
+        function getPdfLink(title) {
+            const fileName = title.replace(/ /g, "") + ".pdf";
+            return `pdfs/${fileName}`; // Adjust path as needed
+        }
+
+        // Function to populate Learn More section with clickable links
+        function populateLearnMore() {
+            const category = document.getElementById('reportCategory').value;
+            const learnMoreList = document.getElementById('learnMoreList');
+            let filteredReports;
+
+            if (category === "debt") {
+                filteredReports = debtReports;
+            } else if (category === "investment") {
+                filteredReports = investmentReports;
+            } else {
+                filteredReports = allReports; // "all" category
+            }
+
+            const randomReports = getRandomReports(filteredReports, 3);
+            learnMoreList.innerHTML = randomReports
+                .map(report => `
+                    <p><a href="#" onclick="requestReport('${report}'); return false;">"${report}"</a></p>
+                `)
+                .join('');
+        }
+
+        // Function to handle report click
+        function requestReport(reportTitle) {
+            const userEmail = sessionStorage.getItem('userEmail');
+            if (userEmail) {
+                // If email exists in sessionStorage, open the PDF directly
+                window.open(getPdfLink(reportTitle), '_blank');
+            } else {
+                // Show email modal and store the requested report
+                window.requestedReport = reportTitle;
+                showReportEmailModal();
+            }
+        }
+
+        // Show report email modal
+        function showReportEmailModal() {
+            const modal = document.getElementById('reportEmailModal');
+            modal.style.display = 'flex';
+            document.getElementById('reportEmailInput').focus();
+        }
+
+        // Close report email modal
+        function closeReportModal() {
+            const modal = document.getElementById('reportEmailModal');
+            modal.style.display = 'none';
+            document.getElementById('reportEmailInput').value = '';
+            window.requestedReport = null;
+        }
+
+        // Submit report email and download immediately
+        function submitReportEmail() {
+            const email = document.getElementById('reportEmailInput').value;
+            if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                // Store email in sessionStorage
+                sessionStorage.setItem('userEmail', email);
+                console.log('Report email submitted:', email);
+                // Open the requested report PDF immediately
+                if (window.requestedReport) {
+                    window.open(getPdfLink(window.requestedReport), '_blank');
+                }
+                closeReportModal();
+            } else {
+                alert('Please enter a valid email address');
+            }
+        }
+
+        // Call populateLearnMore when the page loads
+        document.addEventListener('DOMContentLoaded', populateLearnMore);
+
         const debtRateInput = document.getElementById('debt-rate');
         const rorInput = document.getElementById('ror');
         const resultMessage = document.getElementById('resultMessage');
@@ -736,6 +881,12 @@
         document.getElementById('emailInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 submitEmail();
+            }
+        });
+
+        document.getElementById('reportEmailInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                submitReportEmail();
             }
         });
 
