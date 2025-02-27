@@ -6,10 +6,10 @@
     <title>Debt vs Investment Calculator</title>
     <style>
         :root {
-            --primary: #1a3c6d; /* Warmer navy for trust */
-            --secondary: #26a69a; /* Teal for optimism */
-            --accent: #f4a261; /* Coral for warmth */
-            --background: linear-gradient(to bottom, #f4f7fa, #e8f0f5); /* Subtle gradient */
+            --primary: #1a3c6d;
+            --secondary: #26a69a;
+            --accent: #f4a261;
+            --background: linear-gradient(to bottom, #f4f7fa, #e8f0f5);
             --card-bg: #ffffff;
             --text: #333333;
             --shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -551,11 +551,7 @@
 
                 <div class="related-topics">
                     <h3>Related Topics:</h3>
-                    <div class="report-list">
-                        <p>"Compound Interest Explained"</p>
-                        <p>"Risk vs Reward in Investing"</p>
-                        <p>"Budgeting for Financial Freedom"</p>
-                    </div>
+                    <div class="report-list" id="relatedTopicsList"></div>
                 </div>
 
                 <p class="disclaimer">The suggested recommendations serve as general guidelines but may differ based on your unique financial circumstances. Contact a financial representative for a more personalized assessment.</p>
@@ -612,7 +608,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
     <script>
-        // Report titles categorized
+        // Report titles categorized for Learn More section
         const allReports = [
             "Accumulation Goals",
             "Purchasing Power of One Dollar",
@@ -657,19 +653,67 @@
             "Dollar Cost Averaging"
         ];
 
-        // Function to shuffle array and return 3 random items
-        function getRandomReports(arr, num) {
-            const shuffled = [...arr].sort(() => 0.5 - Math.random());
-            return shuffled.slice(0, num);
+        // Related Topics categorized reports
+        const relatedReports = [
+            { title: "Accumulation Goals", category: "General" },
+            { title: "Basic Steps in the Financial Planning Process", category: "General" },
+            { title: "Choose the Financial Planning Team", category: "General" },
+            { title: "Individual Disability Income Insurance", category: "Disability" },
+            { title: "The Impact of Disability", category: "Disability" },
+            { title: "The Individual Need for Disability Insurance", category: "Disability" },
+            { title: "The Need for Retirement Planning", category: "Retirement" },
+            { title: "How a Roth IRA Works", category: "Retirement" },
+            { title: "IRAs Compared", category: "Retirement" },
+            { title: "How a 401(k) Cash or Deferred Plan Works", category: "Retirement" },
+            { title: "Term Life Insurance", category: "Life Insurance" },
+            { title: "The Need for Responsible Planning", category: "Life Insurance" },
+            { title: "Types of Life Insurance Policies", category: "Life Insurance" },
+            { title: "Advantages of a Will", category: "Estate Planning" },
+            { title: "Avoiding Probate", category: "Estate Planning" },
+            { title: "Basic Steps in the Estate Planning Process", category: "Estate Planning" },
+            { title: "The Importance of Beneficiary Designations", category: "Estate Planning" },
+            { title: "Types of Wills and Trusts", category: "Estate Planning" },
+            { title: "The Need for Estate Planning", category: "Estate Planning" }
+        ];
+
+        // Function to shuffle array
+        function shuffleArray(arr) {
+            return arr.sort(() => 0.5 - Math.random());
+        }
+
+        // Function to get 3 random reports from different categories
+        function getRandomRelatedReports() {
+            const shuffledReports = shuffleArray([...relatedReports]);
+            const selectedReports = [];
+            const usedCategories = new Set();
+
+            for (const report of shuffledReports) {
+                if (!usedCategories.has(report.category) && selectedReports.length < 3) {
+                    selectedReports.push(report.title);
+                    usedCategories.add(report.category);
+                }
+            }
+            return selectedReports;
+        }
+
+        // Function to populate Related Topics
+        function populateRelatedTopics() {
+            const relatedTopicsList = document.getElementById('relatedTopicsList');
+            const randomReports = getRandomRelatedReports();
+            relatedTopicsList.innerHTML = randomReports
+                .map(report => `
+                    <p><a href="#" onclick="requestReport('${report}'); return false;">"${report}"</a></p>
+                `)
+                .join('');
         }
 
         // Function to generate PDF link from report title (no spaces)
         function getPdfLink(title) {
             const fileName = title.replace(/ /g, "") + ".pdf";
-            return `pdfs/${fileName}`; // Adjust path as needed
+            return `pdfs/${fileName}`;
         }
 
-        // Function to populate Learn More section with clickable links
+        // Function to populate Learn More section
         function populateLearnMore() {
             const category = document.getElementById('reportCategory').value;
             const learnMoreList = document.getElementById('learnMoreList');
@@ -680,7 +724,7 @@
             } else if (category === "investment") {
                 filteredReports = investmentReports;
             } else {
-                filteredReports = allReports; // "all" category
+                filteredReports = allReports;
             }
 
             const randomReports = getRandomReports(filteredReports, 3);
@@ -691,14 +735,18 @@
                 .join('');
         }
 
+        // Function to get 3 random reports for Learn More
+        function getRandomReports(arr, num) {
+            const shuffled = [...arr].sort(() => 0.5 - Math.random());
+            return shuffled.slice(0, num);
+        }
+
         // Function to handle report click
         function requestReport(reportTitle) {
             const userEmail = sessionStorage.getItem('userEmail');
             if (userEmail) {
-                // If email exists in sessionStorage, open the PDF directly
                 window.open(getPdfLink(reportTitle), '_blank');
             } else {
-                // Show email modal and store the requested report
                 window.requestedReport = reportTitle;
                 showReportEmailModal();
             }
@@ -719,14 +767,12 @@
             window.requestedReport = null;
         }
 
-        // Submit report email and download immediately
+        // Submit report email and download
         function submitReportEmail() {
             const email = document.getElementById('reportEmailInput').value;
             if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                // Store email in sessionStorage
                 sessionStorage.setItem('userEmail', email);
                 console.log('Report email submitted:', email);
-                // Open the requested report PDF immediately
                 if (window.requestedReport) {
                     window.open(getPdfLink(window.requestedReport), '_blank');
                 }
@@ -736,8 +782,11 @@
             }
         }
 
-        // Call populateLearnMore when the page loads
-        document.addEventListener('DOMContentLoaded', populateLearnMore);
+        // Initial population of sections
+        document.addEventListener('DOMContentLoaded', () => {
+            populateLearnMore();
+            populateRelatedTopics();
+        });
 
         const debtRateInput = document.getElementById('debt-rate');
         const rorInput = document.getElementById('ror');
